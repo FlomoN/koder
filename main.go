@@ -3,15 +3,15 @@ package main
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	discovery "github.com/gkarthiks/k8s-discovery"
+	v1a "k8s.io/api/apps/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
 func main(){
-	fmt.Println("Hello World");
-
 	k8s, _ := discovery.NewK8s();
 
 	clientSet, err := kubernetes.NewForConfig(k8s.RestConfig);
@@ -19,5 +19,30 @@ func main(){
 		panic(err.Error())
 	}
 
-	fmt.Println(clientSet.CoreV1().Namespaces().List(context.TODO(), v1.ListOptions{}));
+	allDeployments := []v1a.Deployment{};
+
+	namespaces, _ := clientSet.CoreV1().Namespaces().List(context.TODO(), v1.ListOptions{});
+	for _, namespace := range namespaces.Items {
+		deployments, _ := clientSet.AppsV1().Deployments(namespace.Name).List(context.TODO(), v1.ListOptions{});
+		for _, deployment := range deployments.Items {
+
+			keep := false;
+			for k, _ := range deployment.Annotations {
+				if(strings.Contains(k, "koder/")){
+					keep = true;
+					break
+				}
+			}
+			if keep { 
+				allDeployments = append(allDeployments, deployment);
+			}
+			
+		}
+	}
+
+	for _, dep := range allDeployments {
+		fmt.Println(dep.Status.UnavailableReplicas);
+	}
+
+
 }
