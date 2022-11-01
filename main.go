@@ -19,6 +19,17 @@ func main(){
 		panic(err.Error())
 	}
 
+	allDeployments := getAnnotatedDeployments(clientSet);
+
+	for _, dep := range allDeployments {
+		fmt.Println(extractAnnotations(dep));
+	}
+
+}
+
+
+func getAnnotatedDeployments(clientSet *kubernetes.Clientset) []v1a.Deployment {
+
 	allDeployments := []v1a.Deployment{};
 
 	namespaces, _ := clientSet.CoreV1().Namespaces().List(context.TODO(), v1.ListOptions{});
@@ -40,9 +51,22 @@ func main(){
 		}
 	}
 
-	for _, dep := range allDeployments {
-		fmt.Println(dep.Status.UnavailableReplicas);
+	return allDeployments;
+}
+
+
+func extractAnnotations(dep v1a.Deployment) (interval string, unavailable bool) {
+
+	for k, v := range dep.Annotations {
+		switch k {
+			case "koder/restart-time":
+				interval = v;
+			case "koder/restart-unavailable":
+				unavailable = v == "true";
+			default:
+				continue
+		}
 	}
 
-
+	return
 }
