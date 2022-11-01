@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	discovery "github.com/gkarthiks/k8s-discovery"
@@ -22,7 +21,8 @@ func main(){
 	allDeployments := getAnnotatedDeployments(clientSet);
 
 	for _, dep := range allDeployments {
-		fmt.Println(extractAnnotations(dep));
+		interval, unavail := extractAnnotations(dep)
+		t := CreateTrackedDeployment(interval, unavail, dep);
 	}
 
 }
