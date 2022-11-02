@@ -23,7 +23,11 @@ func main(){
 	for _, dep := range allDeployments {
 		interval, unavail := extractAnnotations(dep)
 		t := CreateTrackedDeployment(interval, unavail, dep);
+
+		t.Start();
 	}
+
+	select {} // Blocks forever
 
 }
 

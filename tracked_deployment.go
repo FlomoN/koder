@@ -16,6 +16,7 @@ type TrackedDeployment struct {
 	tracking bool
 
 	ticker *time.Ticker;
+	quit chan bool;
 }
 
 func CreateTrackedDeployment(interval string, unavailable bool, deployment v1a.Deployment) TrackedDeployment {
@@ -35,10 +36,26 @@ func CreateTrackedDeployment(interval string, unavailable bool, deployment v1a.D
 			a = a * 3600 * 24;
 	}
 
-	return TrackedDeployment{a, unavailable, deployment, false, nil}
+	return TrackedDeployment{a, unavailable, deployment, false, nil, make(chan bool)}
 }
 
 func (t *TrackedDeployment) Start() {
-	t.ticker = time.NewTicker(10 * time.Second);
+	t.ticker = time.NewTicker(5 * time.Second);
 	
+	go t.loop();
+
+	t.tracking = true;
+}
+
+func (t *TrackedDeployment) loop() {
+	for {
+		<-t.ticker.C;
+		fmt.Println("Hello");
+	}
+}
+
+func (t *TrackedDeployment) Stop() {
+	t.ticker.Stop();
+	t.quit<-true;
+	t.tracking = false;
 }
