@@ -4,14 +4,19 @@ import (
 	"context"
 	"log"
 	"strings"
+	"time"
 
 	discovery "github.com/gkarthiks/k8s-discovery"
+	"golang.org/x/exp/slices"
 	v1a "k8s.io/api/apps/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
 func main() {
+
+	var trackers []*TrackedDeployment
+
 	k8s, _ := discovery.NewK8s()
 
 	clientSet, err := kubernetes.NewForConfig(k8s.RestConfig)
@@ -19,14 +24,51 @@ func main() {
 		panic(err.Error())
 	}
 
-	allDeployments := getAnnotatedDeployments(clientSet)
+	ticker := time.NewTicker(30 * time.Second)
 
-	for _, dep := range allDeployments {
-		interval, unavail := extractAnnotations(dep)
-		t := CreateTrackedDeployment(interval, unavail, dep, clientSet)
-		t.Start()
-		log.Println("Started tracking", dep.Name)
-	}
+	go func() {
+		for {
+			allDeployments := getAnnotatedDeployments(clientSet)
+
+			var keep []int
+
+			for _, dep := range allDeployments {
+				found := slices.IndexFunc(trackers, func(t *TrackedDeployment) bool {
+					return t.deployment.Name == dep.Name && t.deployment.Namespace == dep.Namespace
+				})
+				if found == -1 {
+					interval, unavail := extractAnnotations(dep)
+					t := CreateTrackedDeployment(interval, unavail, &dep, clientSet)
+					t.Start()
+					log.Println("Started tracking", dep.Name)
+					trackers = append(trackers, &t)
+				} else {
+					keep = append(keep, found)
+				}
+
+			}
+
+			var keepTD []*TrackedDeployment
+
+			// Filter out which to keep
+			for _, keepIndex := range keep {
+				keepTD = append(keepTD, trackers[keepIndex])
+				trackers[keepIndex] = nil
+			}
+
+			// Now remove the rest
+			for _, td := range trackers {
+				if td != nil {
+					log.Println("Stopped tracking", td.deployment.Name)
+					td.Stop()
+				}
+			}
+
+			trackers = keepTD
+
+			<-ticker.C
+		}
+	}()
 
 	select {} // Blocks forever
 

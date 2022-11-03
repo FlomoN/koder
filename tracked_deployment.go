@@ -8,6 +8,7 @@ import (
 	"time"
 
 	v1a "k8s.io/api/apps/v1"
+
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
@@ -17,7 +18,7 @@ type TrackedDeployment struct {
 	interval           int
 	restartUnavailable bool
 
-	deployment v1a.Deployment
+	deployment *v1a.Deployment
 	clientSet  *kubernetes.Clientset
 	tracking   bool
 
@@ -25,7 +26,7 @@ type TrackedDeployment struct {
 	quit   chan bool
 }
 
-func CreateTrackedDeployment(interval string, unavailable bool, deployment v1a.Deployment, clientSet *kubernetes.Clientset) TrackedDeployment {
+func CreateTrackedDeployment(interval string, unavailable bool, deployment *v1a.Deployment, clientSet *kubernetes.Clientset) TrackedDeployment {
 	a := 0
 	b := ""
 
@@ -44,7 +45,8 @@ func CreateTrackedDeployment(interval string, unavailable bool, deployment v1a.D
 }
 
 func (t *TrackedDeployment) Start() {
-	t.ticker = time.NewTicker(time.Duration(t.interval) * time.Second)
+
+	t.ticker = time.NewTicker(5 * time.Second)
 
 	go t.loop()
 
@@ -55,8 +57,7 @@ func (t *TrackedDeployment) loop() {
 	for {
 		<-t.ticker.C
 		fetchedDeployment, _ := t.clientSet.AppsV1().Deployments(t.deployment.Namespace).Get(context.TODO(), t.deployment.Name, v1.GetOptions{})
-		t.deployment = *fetchedDeployment
-		log.Println(t.deployment.Status.AvailableReplicas)
+		t.deployment = fetchedDeployment
 		if t.deployment.Status.UnavailableReplicas > 0 || !t.restartUnavailable {
 			t.restart()
 		}
