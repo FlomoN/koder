@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"log"
 	"strings"
 
 	discovery "github.com/gkarthiks/k8s-discovery"
@@ -22,9 +23,9 @@ func main(){
 
 	for _, dep := range allDeployments {
 		interval, unavail := extractAnnotations(dep)
-		t := CreateTrackedDeployment(interval, unavail, dep);
-
+		t := CreateTrackedDeployment(interval, unavail, dep, clientSet);
 		t.Start();
+		log.Println("Started tracking", dep.Name);
 	}
 
 	select {} // Blocks forever
