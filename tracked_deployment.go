@@ -44,7 +44,7 @@ func CreateTrackedDeployment(interval string, unavailable bool, deployment v1a.D
 }
 
 func (t *TrackedDeployment) Start() {
-	t.ticker = time.NewTicker(60 * time.Second)
+	t.ticker = time.NewTicker(time.Duration(t.interval) * time.Second)
 
 	go t.loop()
 
@@ -66,9 +66,6 @@ func (t *TrackedDeployment) Stop() {
 
 func (t *TrackedDeployment) restart() {
 	log.Println("Restarting ", t.deployment.Name)
-	specAnnotations := t.deployment.Spec.Template.GetAnnotations()
-	specAnnotations["koder/restartedAt"] = time.Now().UTC().Format("2006-01-02T15:04:05Z")
-	t.deployment.Spec.Template.SetAnnotations(specAnnotations)
 
 	patch := []byte(`{"spec": {"template": {"metadata": {"annotations": {"koder/restartedAt": "` + time.Now().UTC().Format("2006-01-02T15:04:05Z") + `"}}}}}`)
 	log.Println(string(patch))
