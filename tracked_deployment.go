@@ -54,7 +54,13 @@ func (t *TrackedDeployment) Start() {
 func (t *TrackedDeployment) loop() {
 	for {
 		<-t.ticker.C
-		t.restart()
+		fetchedDeployment, _ := t.clientSet.AppsV1().Deployments(t.deployment.Namespace).Get(context.TODO(), t.deployment.Name, v1.GetOptions{})
+		t.deployment = *fetchedDeployment
+		log.Println(t.deployment.Status.AvailableReplicas)
+		if t.deployment.Status.UnavailableReplicas > 0 || !t.restartUnavailable {
+			t.restart()
+		}
+
 	}
 }
 
