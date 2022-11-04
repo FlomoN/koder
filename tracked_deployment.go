@@ -46,7 +46,7 @@ func CreateTrackedDeployment(interval string, unavailable bool, deployment *v1a.
 
 func (t *TrackedDeployment) Start() {
 
-	t.ticker = time.NewTicker(5 * time.Second)
+	t.ticker = time.NewTicker(time.Duration(t.interval) * time.Second)
 
 	go t.loop()
 
@@ -75,11 +75,10 @@ func (t *TrackedDeployment) restart() {
 	log.Println("Restarting ", t.deployment.Name)
 
 	patch := []byte(`{"spec": {"template": {"metadata": {"annotations": {"koder/restartedAt": "` + time.Now().UTC().Format("2006-01-02T15:04:05Z") + `"}}}}}`)
-	log.Println(string(patch))
 	dep, err := t.clientSet.AppsV1().Deployments(t.deployment.Namespace).Patch(context.TODO(), t.deployment.Name, types.StrategicMergePatchType, patch, v1.PatchOptions{})
 	if err != nil {
 		log.Fatalln(err.Error())
 	} else {
-		log.Println(dep.Spec.Template.GetAnnotations())
+		log.Println("Restart successful for", dep.Name)
 	}
 }

@@ -42,6 +42,7 @@ func main() {
 					t.Start()
 					log.Println("Started tracking", dep.Name)
 					trackers = append(trackers, &t)
+					keep = append(keep, len(trackers)-1)
 				} else {
 					keep = append(keep, found)
 				}
