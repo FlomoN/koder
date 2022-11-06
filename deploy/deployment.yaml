@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: koder
+  namespace: koder
+spec:
+  selector:
+    matchLabels:
+      app: koder
+  template:
+    metadata:
+      labels:
+        app: koder
+    spec:
+      serviceAccountName: koder
+      containers:
+        - name: koder
+          image: ghcr.io/flomon/koder:latest
+          resources:
+            limits:
+              memory: "128Mi"
+              cpu: "100m"
+            requests:
+              memory: "10Mi"
+              cpu: "10m"
