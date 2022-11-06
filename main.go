@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"strings"
+	"sync"
 	"time"
 
 	discovery "github.com/gkarthiks/k8s-discovery"
@@ -26,7 +27,11 @@ func main() {
 
 	ticker := time.NewTicker(30 * time.Second)
 
+	var wg sync.WaitGroup
+	wg.Add(1)
+
 	go func() {
+		defer wg.Done()
 		for {
 			allDeployments := getAnnotatedDeployments(clientSet)
 
@@ -70,9 +75,8 @@ func main() {
 			<-ticker.C
 		}
 	}()
-
-	select {} // Blocks forever
-
+	
+	wg.Wait()
 }
 
 func getAnnotatedDeployments(clientSet *kubernetes.Clientset) []v1a.Deployment {
