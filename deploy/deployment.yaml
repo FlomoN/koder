@@ -16,6 +16,7 @@ spec:
       containers:
         - name: koder
           image: ghcr.io/flomon/koder:latest
+          imagePullPolicy: Always
           resources:
             limits:
               memory: "128Mi"

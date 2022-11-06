@@ -16,6 +16,8 @@ import (
 
 func main() {
 
+	log.Println("Welcome to Koder :)")
+
 	var trackers []*TrackedDeployment
 
 	k8s, _ := discovery.NewK8s()
@@ -75,7 +77,7 @@ func main() {
 			<-ticker.C
 		}
 	}()
-	
+
 	wg.Wait()
 }
 
@@ -83,9 +85,17 @@ func getAnnotatedDeployments(clientSet *kubernetes.Clientset) []v1a.Deployment {
 
 	allDeployments := []v1a.Deployment{}
 
-	namespaces, _ := clientSet.CoreV1().Namespaces().List(context.TODO(), v1.ListOptions{})
+	namespaces, err := clientSet.CoreV1().Namespaces().List(context.TODO(), v1.ListOptions{})
+	if err != nil {
+		log.Panicln("Trouble retrieving namespaces")
+		panic(err.Error())
+	}
 	for _, namespace := range namespaces.Items {
-		deployments, _ := clientSet.AppsV1().Deployments(namespace.Name).List(context.TODO(), v1.ListOptions{})
+		deployments, err := clientSet.AppsV1().Deployments(namespace.Name).List(context.TODO(), v1.ListOptions{})
+		if err != nil {
+			log.Panicln("Trouble retrieving deployments")
+			panic(err.Error())
+		}
 		for _, deployment := range deployments.Items {
 
 			keep := false
