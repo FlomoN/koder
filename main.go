@@ -87,13 +87,13 @@ func getAnnotatedDeployments(clientSet *kubernetes.Clientset) []v1a.Deployment {
 
 	namespaces, err := clientSet.CoreV1().Namespaces().List(context.TODO(), v1.ListOptions{})
 	if err != nil {
-		log.Panicln("Trouble retrieving namespaces")
+		log.Println("Trouble retrieving namespaces")
 		panic(err.Error())
 	}
 	for _, namespace := range namespaces.Items {
 		deployments, err := clientSet.AppsV1().Deployments(namespace.Name).List(context.TODO(), v1.ListOptions{})
 		if err != nil {
-			log.Panicln("Trouble retrieving deployments")
+			log.Println("Trouble retrieving deployments")
 			panic(err.Error())
 		}
 		for _, deployment := range deployments.Items {
