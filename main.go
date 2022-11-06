@@ -7,7 +7,7 @@ import (
 	"time"
 
 	discovery "github.com/gkarthiks/k8s-discovery"
-	"golang.org/x/exp/slices"
+	"github.com/samber/lo"
 	v1a "k8s.io/api/apps/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -33,7 +33,7 @@ func main() {
 			var keep []int
 
 			for _, dep := range allDeployments {
-				found := slices.IndexFunc(trackers, func(t *TrackedDeployment) bool {
+				_, found, _ := lo.FindIndexOf(trackers, func(t *TrackedDeployment) bool {
 					return t.deployment.Name == dep.Name && t.deployment.Namespace == dep.Namespace
 				})
 				if found == -1 {
