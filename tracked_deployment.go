@@ -18,9 +18,10 @@ type TrackedDeployment struct {
 	interval           int
 	restartUnavailable bool
 
-	deployment *v1a.Deployment
-	clientSet  *kubernetes.Clientset
-	tracking   bool
+	deployment       *v1a.Deployment
+	clientSet        *kubernetes.Clientset
+	tracking         bool
+	MarkedForRemoval bool
 
 	ticker *time.Ticker
 	quit   chan bool
@@ -41,7 +42,7 @@ func CreateTrackedDeployment(interval string, unavailable bool, deployment *v1a.
 		a = a * 3600 * 24
 	}
 
-	return TrackedDeployment{a, unavailable, deployment, clientSet, false, nil, make(chan bool)}
+	return TrackedDeployment{a, unavailable, deployment, clientSet, false, false, nil, make(chan bool)}
 }
 
 func (t *TrackedDeployment) Start() {

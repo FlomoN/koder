@@ -38,6 +38,7 @@ func main() {
 			allDeployments := getAnnotatedDeployments(clientSet)
 
 			var keep []int
+			var newtrackers []*TrackedDeployment
 
 			for _, dep := range allDeployments {
 				_, found, _ := lo.FindIndexOf(trackers, func(t *TrackedDeployment) bool {
@@ -45,11 +46,11 @@ func main() {
 				})
 				if found == -1 {
 					interval, unavail := extractAnnotations(dep)
-					t := CreateTrackedDeployment(interval, unavail, &dep, clientSet)
+					depcopy := dep
+					t := CreateTrackedDeployment(interval, unavail, &depcopy, clientSet)
 					t.Start()
-					log.Println("Started tracking", dep.Name)
-					trackers = append(trackers, &t)
-					keep = append(keep, len(trackers)-1)
+					log.Println("Started tracking", dep.Name, t.deployment.Name)
+					newtrackers = append(newtrackers, &t)
 				} else {
 					keep = append(keep, found)
 				}
@@ -58,21 +59,28 @@ func main() {
 
 			var keepTD []*TrackedDeployment
 
+			// Mark all for removal first
+			for _, td := range trackers {
+				td.MarkedForRemoval = true
+			}
+
 			// Filter out which to keep
 			for _, keepIndex := range keep {
 				keepTD = append(keepTD, trackers[keepIndex])
-				trackers[keepIndex] = nil
+				trackers[keepIndex].MarkedForRemoval = false
 			}
 
 			// Now remove the rest
 			for _, td := range trackers {
-				if td != nil {
+				if td.MarkedForRemoval {
 					log.Println("Stopped tracking", td.deployment.Name)
 					td.Stop()
 				}
 			}
 
-			trackers = keepTD
+			trackers = []*TrackedDeployment{}
+			trackers = append(trackers, keepTD...)
+			trackers = append(trackers, newtrackers...)
 
 			<-ticker.C
 		}
